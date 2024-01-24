@@ -1,0 +1,10 @@
+{
+    "ros.distro": "noetic",
+    "files.associations": {
+        "mutex": "cpp",
+        "iostream": "cpp",
+        "*.ipp": "cpp",
+        "shared_mutex": "cpp",
+        "condition_variable": "cpp"
+    }
+}
