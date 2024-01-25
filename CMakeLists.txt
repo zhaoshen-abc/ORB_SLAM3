@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ORB_SLAM3)
 
-SET(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_BUILD_TYPE Release)
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
@@ -146,15 +146,19 @@ if(realsense2_FOUND)
     )
 endif()
 
+set(LIBS
+        ${PROJECT_NAME}
+        ${catkin_LIBRARIES}
+)
 
 # # Node for monocular camera
-# rosbuild_add_executable(Mono
-# src/ros_mono.cc
-# )
+add_executable(Mono
+Examples_old/ROS/ORB_SLAM3/src/ros_mono.cc
+)
 
-# target_link_libraries(Mono
-# ${LIBS}
-# )
+target_link_libraries(Mono
+${LIBS}
+)
 
 # # Node for monocular camera (Augmented Reality Demo)
 # rosbuild_add_executable(MonoAR
@@ -175,11 +179,6 @@ endif()
 # target_link_libraries(Stereo
 # ${LIBS}
 # )
-
-set(LIBS
-        ${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-)
 
 # Node for RGB-D camera
 add_executable(RGBD

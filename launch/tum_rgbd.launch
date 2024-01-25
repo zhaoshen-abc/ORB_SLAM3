@@ -1,0 +1,17 @@
+<launch>
+
+<!-- <arg name="map_size_x" default="10.0"/>
+<arg name="map_size_y" default="10.0"/>
+<arg name="map_size_z" default=" 2.0"/> -->
+
+
+  <node pkg="ORB_SLAM3" type="RGBD" name="RGBD" output="screen" required = "true" args = "/home/zhaoshen/all_ros_ws/catkin_ws_ORB/src/ORB_SLAM3/Vocabulary/ORBvoc.txt /home/zhaoshen/all_ros_ws/catkin_ws_ORB/src/ORB_SLAM3/Examples_old/RGB-D/TUM1.yaml">
+      <remap from="/camera/rgb/image_raw"       to="/camera/rgb/image_color"/>
+      <remap from="camera/depth_registered/image_raw"             to="/camera/depth/image"/> 
+
+      <!-- <param name="map/margin"       value="0.0" />
+      <param name="map/resolution"   value="0.2" /> -->
+
+  </node>
+
+</launch>
