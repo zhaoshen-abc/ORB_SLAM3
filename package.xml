@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>feature_tracker</name>
+  <name>ORB_SLAM3</name>
   <version>0.0.0</version>
-  <description>The feature_tracker package</description>
+  <description>The ORB_SLAM3 package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
