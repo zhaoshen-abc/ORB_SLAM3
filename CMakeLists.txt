@@ -43,6 +43,7 @@ find_package(catkin  REQUIRED COMPONENTS
   roscpp
   message_filters
   cv_bridge
+  tf
 )
 catkin_package()
 include_directories(include 

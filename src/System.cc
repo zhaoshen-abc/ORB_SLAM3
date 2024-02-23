@@ -547,6 +547,8 @@ void System::Shutdown()
 
     if(!mStrSaveAtlasToFile.empty())
     {
+        printf("Atlas saving to file %s\n", mStrSaveAtlasToFile.c_str());
+        std::cout << mStrSaveAtlasToFile << std::endl;
         Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_NORMAL);
         SaveAtlas(FileType::BINARY_FILE);
     }
@@ -1408,7 +1410,7 @@ void System::SaveAtlas(int type){
         // Save the current session
         mpAtlas->PreSave();
 
-        string pathSaveFileName = "./";
+        string pathSaveFileName = "/home/zhaoshen/all_ros_ws/catkin_ws_ORB/";
         pathSaveFileName = pathSaveFileName.append(mStrSaveAtlasToFile);
         pathSaveFileName = pathSaveFileName.append(".osa");
 
@@ -1418,7 +1420,7 @@ void System::SaveAtlas(int type){
 
         if(type == TEXT_FILE) // File text
         {
-            cout << "Starting to write the save text file " << endl;
+            cout << "Starting to write the save text file " << pathSaveFileName << endl;
             std::remove(pathSaveFileName.c_str());
             std::ofstream ofs(pathSaveFileName, std::ios::binary);
             boost::archive::text_oarchive oa(ofs);
@@ -1430,7 +1432,7 @@ void System::SaveAtlas(int type){
         }
         else if(type == BINARY_FILE) // File binary
         {
-            cout << "Starting to write the save binary file" << endl;
+            cout << "Starting to write the save binary file " << pathSaveFileName << endl;
             std::remove(pathSaveFileName.c_str());
             std::ofstream ofs(pathSaveFileName, std::ios::binary);
             boost::archive::binary_oarchive oa(ofs);
@@ -1438,6 +1440,8 @@ void System::SaveAtlas(int type){
             oa << strVocabularyChecksum;
             oa << mpAtlas;
             cout << "End to write save binary file" << endl;
+            
+            ofs.close();
         }
     }
 }
@@ -1447,7 +1451,7 @@ bool System::LoadAtlas(int type)
     string strFileVoc, strVocChecksum;
     bool isRead = false;
 
-    string pathLoadFileName = "./";
+    string pathLoadFileName = "/home/zhaoshen/all_ros_ws/catkin_ws_ORB/";
     pathLoadFileName = pathLoadFileName.append(mStrLoadAtlasFromFile);
     pathLoadFileName = pathLoadFileName.append(".osa");
 

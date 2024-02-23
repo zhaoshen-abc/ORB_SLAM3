@@ -6,16 +6,16 @@
 Camera.type: "PinHole"
 
 # Camera calibration and distortion parameters (OpenCV) 
-Camera.fx: 517.306408
-Camera.fy: 516.469215
-Camera.cx: 318.643040
-Camera.cy: 255.313989
+Camera.fx: 325.0188
+Camera.fy: 325.0188
+Camera.cx: 316.7723
+Camera.cy: 180.9843
 
-Camera.k1: 0.262383
-Camera.k2: -0.953104
-Camera.p1: -0.005358
-Camera.p2: 0.002628
-Camera.k3: 1.163314
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+Camera.k3: 0.0
 
 Camera.width: 640
 Camera.height: 480
@@ -33,7 +33,7 @@ Camera.RGB: 1
 ThDepth: 40.0
 
 # Deptmap values factor 
-DepthMapFactor: 1.0 # 1.0 for ROS_bag
+DepthMapFactor: 1000.0 # 1.0 for ROS_bag
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
@@ -69,5 +69,5 @@ Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -1.8
 Viewer.ViewpointF: 500
 
-System.SaveAtlasToFile: "map"
-System.LoadAtlasFromFile: "map"
+# System.SaveAtlasToFile: "map"
+# System.LoadAtlasFromFile: "map"

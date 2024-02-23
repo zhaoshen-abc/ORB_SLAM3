@@ -27,8 +27,12 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-
+#include <nav_msgs/Odometry.h>
 #include<opencv2/core/core.hpp>
+#include <tf/transform_broadcaster.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include"../../../include/System.h"
 
@@ -42,7 +46,17 @@ public:
     void GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msgs::ImageConstPtr& msgD);
 
     ORB_SLAM3::System* mpSLAM;
+
 };
+
+void pub_pose(const Sophus::SE3f& Twc, const std_msgs::Header &header);
+void pub_pointcloud(const Sophus::SE3f& Twc, const void* depth, const std_msgs::Header &header);
+
+ros::Publisher pub_odometry;
+// sensor_msgs::PointCloud point_cloud;
+sensor_msgs::PointCloud point_cloud_dense;
+ros::Publisher pub_point_cloud2;
+ros::Publisher pub_point_cloud_dense;
 
 int main(int argc, char **argv)
 {
@@ -68,6 +82,9 @@ int main(int argc, char **argv)
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), rgb_sub,depth_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabRGBD,&igb,_1,_2));
+    pub_odometry = nh.advertise<nav_msgs::Odometry>("/ORB_SLAM3/odometry", 1000);
+    pub_point_cloud2  = nh.advertise<sensor_msgs::PointCloud2>("/ORB_SLAM3/points_filtered2", 1000);
+    pub_point_cloud_dense = nh.advertise<sensor_msgs::PointCloud>("/ORB_SLAM3/point_cloud_dense", 1000);
 
     ros::spin();
 
@@ -106,7 +123,133 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const senso
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-    mpSLAM->TrackRGBD(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec());
+    Sophus::SE3f Tcw = mpSLAM->TrackRGBD(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec());
+    pub_pose(Tcw.inverse(), msgRGB->header);
+    pub_pointcloud(Tcw.inverse(), msgD->data.data(), msgRGB->header);
 }
 
+void pub_pose(const Sophus::SE3f& Twc, const std_msgs::Header &header)
+{
+    nav_msgs::Odometry odometry;
+    odometry.header.stamp = header.stamp;
+    odometry.header.frame_id = "slam";
+    odometry.child_frame_id = "slam";
 
+    // Tcw.rotationMatrix();
+    auto qwc = Twc.unit_quaternion();
+
+    Eigen::Vector3d pos(Twc.translation()(0), Twc.translation()(1), Twc.translation()(2));  // tcw
+
+    // Eigen::Quaterniond tmp_Q;
+    // tmp_Q = Eigen::Quaterniond(R);
+    odometry.pose.pose.position.x = pos.x();
+    odometry.pose.pose.position.y = pos.y();
+    odometry.pose.pose.position.z = pos.z();
+    odometry.pose.pose.orientation.x = qwc.x();
+    odometry.pose.pose.orientation.y = qwc.y();
+    odometry.pose.pose.orientation.z = qwc.z();
+    odometry.pose.pose.orientation.w = qwc.w();
+    // odometry.twist.twist.linear.x = estimator.Vs[WINDOW_SIZE].x();
+    // odometry.twist.twist.linear.y = estimator.Vs[WINDOW_SIZE].y();
+    // odometry.twist.twist.linear.z = estimator.Vs[WINDOW_SIZE].z();
+    pub_odometry.publish(odometry);
+
+	static tf::TransformBroadcaster br;
+    tf::Transform transform;
+    tf::Quaternion q;
+
+    transform.setOrigin(tf::Vector3(pos(0),
+                                    pos(1),
+                                    pos(2)));
+	q.setW(qwc.w());
+    q.setX(qwc.x());
+    q.setY(qwc.y());
+    q.setZ(qwc.z());
+    transform.setRotation(q);
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "slam", "body"));
+
+	// printf("trans : %1.4f, %1.4f, %1.4f; rot : %1.4f, %1.4f, %1.4f, %1.4f\n", pos(0), pos(1), pos(2), q_eigen.w(), q_eigen.x(), q_eigen.y(), q_eigen.z());
+    tf::Transform transform_world;
+	tf::Quaternion q_world(-0.707f, 0.0, 0.0, 0.707f);
+    transform_world.setOrigin(tf::Vector3(0,0,0));
+    transform_world.setRotation(q_world);
+    br.sendTransform(tf::StampedTransform(transform_world, ros::Time::now(), "world", "slam"));
+}
+
+void pub_pointcloud(const Sophus::SE3f& Twc, const void* depth, const std_msgs::Header &header)
+{
+    auto qwc = Twc.unit_quaternion();
+    Eigen::Vector3d twc(Twc.translation()(0), Twc.translation()(1), Twc.translation()(2));  // tcw
+	// Eigen::Quaterniond q(R.transpose());
+    Eigen::Matrix3f Rwcf = Twc.rotationMatrix().matrix();
+    Eigen::Matrix3d Rwc = Rwcf.cast<double>();
+    // Eigen::Matrix3d Rcw = Rwc.transpose();
+
+#define USE_DATASET 0
+#if USE_DATASET
+		float fx = 535.4f; // fx
+		float cx = 320.1f; // Cx
+		float fy = 539.2f; // fy
+		float cy = 247.6f; // Cy
+        float scale = 5000;
+#else
+		float fx = 325.0188f; // fx
+		float cx = 316.7723f; // Cx
+		float fy = 325.0188f; // fy
+		float cy = 180.9843f; // Cy
+        float scale = 1000;
+#endif
+    int height = 360, width = 640;
+    int numpoints = height*width;
+    point_cloud_dense.points.clear();
+    point_cloud_dense.points.reserve(height*width);
+
+    sensor_msgs::PointCloud2 point_cloud2;
+    sensor_msgs::PointCloud2Modifier modifier(point_cloud2);
+    modifier.setPointCloud2FieldsByString(1,"xyz");
+    modifier.resize(numpoints);
+    point_cloud2.width  = numpoints;
+    point_cloud2.height = 1;
+    point_cloud2.is_bigendian = false;
+    point_cloud2.is_dense = false; // there may be invalid points
+
+    //iterators
+    sensor_msgs::PointCloud2Iterator<float> out_x(point_cloud2, "x");
+    sensor_msgs::PointCloud2Iterator<float> out_y(point_cloud2, "y");
+    sensor_msgs::PointCloud2Iterator<float> out_z(point_cloud2, "z");
+
+    // cloud.points.resize(height*width);
+    for (int y = 0; y < height; y ++ ) {
+        for (int x = 0; x < width; x ++ ) {
+            geometry_msgs::Point32 p;
+
+            uint16_t depth_t = ((uint16_t*)depth)[y * width + x];
+            
+            float Zr = depth_t / scale;
+            float Xr = Zr * (x - cx) / fx;
+			float Yr = Zr * (y - cy) / fy;
+
+            Eigen::Vector3d Pc(Xr, Yr, Zr);
+            Eigen::Vector3d Pw = Rwc * Pc + twc;
+            // Eigen::Vector3d Pw = Rcw * Pc + twc;
+            
+            p.x = Pw.x();
+            p.y = Pw.y();
+            p.z = Pw.z();
+            point_cloud_dense.points.push_back(p);
+
+            *out_x = Pc.x();
+            *out_y = Pc.y();
+            *out_z = Pc.z();
+            ++out_x;
+            ++out_y;
+            ++out_z;
+        }
+    }
+    point_cloud_dense.header = header;
+    point_cloud_dense.header.frame_id = "slam";
+    point_cloud2.header = header;
+    point_cloud2.header.frame_id = "body";
+    pub_point_cloud_dense.publish(point_cloud_dense);
+    pub_point_cloud2.publish(point_cloud2);
+}
