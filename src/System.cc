@@ -1457,7 +1457,7 @@ bool System::LoadAtlas(int type)
 
     if(type == TEXT_FILE) // File text
     {
-        cout << "Starting to read the save text file " << endl;
+        cout << "Starting to read the save text file :" << pathLoadFileName << endl;
         std::ifstream ifs(pathLoadFileName, std::ios::binary);
         if(!ifs.good())
         {

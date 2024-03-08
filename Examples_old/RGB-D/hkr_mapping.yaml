@@ -69,5 +69,5 @@ Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -1.8
 Viewer.ViewpointF: 500
 
-# System.SaveAtlasToFile: "save_map"
-System.LoadAtlasFromFile: "load_map"
+System.SaveAtlasToFile: "save_map"
+# System.LoadAtlasFromFile: "load_map"
