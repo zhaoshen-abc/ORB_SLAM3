@@ -3127,7 +3127,8 @@ bool Tracking::NeedNewKeyFrame()
     bNeedToInsertClose = (nTrackedClose<100) && (nNonTrackedClose>70);
 
     // Thresholds
-    float thRefRatio = 0.75f;
+    // float thRefRatio = 0.75f;
+    float thRefRatio = 0.5f;
     if(nKFs<2)
         thRefRatio = 0.4f;
 

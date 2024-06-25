@@ -5,6 +5,8 @@ SET(CMAKE_BUILD_TYPE Release)
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
+set(BUILD_SHARED_LIBS OFF)
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
@@ -65,7 +67,7 @@ ${PROJECT_SOURCE_DIR}/Examples_old/ROS/ORB_SLAM3
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME} STATIC
 src/System.cc
 src/Tracking.cc
 src/LocalMapping.cc
@@ -157,7 +159,7 @@ add_executable(Mono
 Examples_old/ROS/ORB_SLAM3/src/ros_mono.cc
 )
 
-target_link_libraries(Mono
+target_link_libraries(Mono PUBLIC
 ${LIBS}
 )
 
@@ -182,12 +184,12 @@ ${LIBS}
 # )
 
 # Node for RGB-D camera
-add_executable(RGBD
+add_executable(RGBD 
 # src/ros_rgbd.cc
 Examples_old/ROS/ORB_SLAM3/src/ros_rgbd.cc
 )
 
-target_link_libraries(RGBD
+target_link_libraries(RGBD PUBLIC
 ${LIBS}
 )
 

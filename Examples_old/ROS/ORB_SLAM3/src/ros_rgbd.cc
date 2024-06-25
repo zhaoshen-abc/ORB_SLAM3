@@ -49,6 +49,7 @@ public:
 
 };
 
+void pubTF(const Sophus::SE3f& Tcw, const std_msgs::Header &header);
 void pub_pose(const Sophus::SE3f& Twc, const std_msgs::Header &header);
 void pub_pointcloud(const Sophus::SE3f& Twc, const void* depth, const std_msgs::Header &header);
 
@@ -124,8 +125,41 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const senso
         return;
     }
     Sophus::SE3f Tcw = mpSLAM->TrackRGBD(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec());
-    pub_pose(Tcw.inverse(), msgRGB->header);
+    Sophus::SE3f Twc = Tcw.inverse();
+    pubTF(Twc, msgRGB->header);
+    pub_pose(Twc, msgRGB->header);
     pub_pointcloud(Tcw.inverse(), msgD->data.data(), msgRGB->header);
+}
+
+void pubTF(const Sophus::SE3f& Twc, const std_msgs::Header &header)
+{
+	static tf::TransformBroadcaster br;
+    tf::Transform transform;
+	tf::Quaternion q;
+
+	Eigen::Quaternionf q_eigen(Twc.rotationMatrix()); // Rwc
+    Eigen::Vector3f twc = Twc.translation();
+    transform.setOrigin(tf::Vector3(twc(0), twc(1), twc(2))); // twc
+	q.setW(q_eigen.w());
+    q.setX(q_eigen.x());
+    q.setY(q_eigen.y());
+    q.setZ(q_eigen.z());
+    transform.setRotation(q);
+    br.sendTransform(tf::StampedTransform(transform, header.stamp, "slam", "cam"));
+      
+	// printf("trans : %1.4f, %1.4f, %1.4f; rot : %1.4f, %1.4f, %1.4f, %1.4f\n", pos(0), pos(1), pos(2), q_eigen.w(), q_eigen.x(), q_eigen.y(), q_eigen.z());
+    tf::Transform transform_world;
+	tf::Quaternion q_world(-0.707f, 0.0, 0.0, 0.707f);
+    transform_world.setOrigin(tf::Vector3(0,0,0));
+    transform_world.setRotation(q_world);
+    br.sendTransform(tf::StampedTransform(transform_world, header.stamp, "world", "slam"));
+
+    tf::Transform transform_body;
+	tf::Quaternion q_body(0,0,0,1.0f);
+    transform_body.setOrigin(tf::Vector3(0,0,-0.2));
+    transform_body.setRotation(q_body);
+    br.sendTransform(tf::StampedTransform(transform_body, header.stamp, "cam", "body"));
+
 }
 
 void pub_pose(const Sophus::SE3f& Twc, const std_msgs::Header &header)
@@ -154,26 +188,26 @@ void pub_pose(const Sophus::SE3f& Twc, const std_msgs::Header &header)
     // odometry.twist.twist.linear.z = estimator.Vs[WINDOW_SIZE].z();
     pub_odometry.publish(odometry);
 
-	static tf::TransformBroadcaster br;
-    tf::Transform transform;
-    tf::Quaternion q;
+	// static tf::TransformBroadcaster br;
+    // tf::Transform transform;
+    // tf::Quaternion q;
 
-    transform.setOrigin(tf::Vector3(pos(0),
-                                    pos(1),
-                                    pos(2)));
-	q.setW(qwc.w());
-    q.setX(qwc.x());
-    q.setY(qwc.y());
-    q.setZ(qwc.z());
-    transform.setRotation(q);
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "slam", "body"));
+    // transform.setOrigin(tf::Vector3(pos(0),
+    //                                 pos(1),
+    //                                 pos(2)));
+	// q.setW(qwc.w());
+    // q.setX(qwc.x());
+    // q.setY(qwc.y());
+    // q.setZ(qwc.z());
+    // transform.setRotation(q);
+    // br.sendTransform(tf::StampedTransform(transform, header.stamp, "slam", "body"));
 
-	// printf("trans : %1.4f, %1.4f, %1.4f; rot : %1.4f, %1.4f, %1.4f, %1.4f\n", pos(0), pos(1), pos(2), q_eigen.w(), q_eigen.x(), q_eigen.y(), q_eigen.z());
-    tf::Transform transform_world;
-	tf::Quaternion q_world(-0.707f, 0.0, 0.0, 0.707f);
-    transform_world.setOrigin(tf::Vector3(0,0,0));
-    transform_world.setRotation(q_world);
-    br.sendTransform(tf::StampedTransform(transform_world, ros::Time::now(), "world", "slam"));
+	// // printf("trans : %1.4f, %1.4f, %1.4f; rot : %1.4f, %1.4f, %1.4f, %1.4f\n", pos(0), pos(1), pos(2), q_eigen.w(), q_eigen.x(), q_eigen.y(), q_eigen.z());
+    // tf::Transform transform_world;
+	// tf::Quaternion q_world(-0.707f, 0.0, 0.0, 0.707f);
+    // transform_world.setOrigin(tf::Vector3(0,0,0));
+    // transform_world.setRotation(q_world);
+    // br.sendTransform(tf::StampedTransform(transform_world, header.stamp, "world", "slam"));
 }
 
 void pub_pointcloud(const Sophus::SE3f& Twc, const void* depth, const std_msgs::Header &header)
