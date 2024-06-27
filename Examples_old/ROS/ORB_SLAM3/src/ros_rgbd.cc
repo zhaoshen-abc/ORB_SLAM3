@@ -83,9 +83,9 @@ int main(int argc, char **argv)
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), rgb_sub,depth_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabRGBD,&igb,_1,_2));
-    pub_odometry = nh.advertise<nav_msgs::Odometry>("/ORB_SLAM3/odometry", 1000);
-    pub_point_cloud2  = nh.advertise<sensor_msgs::PointCloud2>("/ORB_SLAM3/points_filtered2", 1000);
-    pub_point_cloud_dense = nh.advertise<sensor_msgs::PointCloud>("/ORB_SLAM3/point_cloud_dense", 1000);
+    pub_odometry = nh.advertise<nav_msgs::Odometry>("/ORB_SLAM3/odometry", 10);
+    pub_point_cloud2  = nh.advertise<sensor_msgs::PointCloud2>("/ORB_SLAM3/points_filtered2", 10);
+    pub_point_cloud_dense = nh.advertise<sensor_msgs::PointCloud>("/ORB_SLAM3/point_cloud_dense", 10);
 
     ros::spin();
 
