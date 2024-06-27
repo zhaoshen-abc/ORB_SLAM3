@@ -46,6 +46,7 @@ find_package(catkin  REQUIRED COMPONENTS
   message_filters
   cv_bridge
   tf
+  rosbag
 )
 catkin_package()
 include_directories(include 
@@ -190,6 +191,15 @@ Examples_old/ROS/ORB_SLAM3/src/ros_rgbd.cc
 )
 
 target_link_libraries(RGBD PUBLIC
+${LIBS}
+)
+
+add_executable(RGBD_BAG
+# src/ros_rgbd.cc
+Examples_old/ROS/ORB_SLAM3/src/ros_rgbd_from_bag.cc
+)
+
+target_link_libraries(RGBD_BAG PUBLIC
 ${LIBS}
 )
 

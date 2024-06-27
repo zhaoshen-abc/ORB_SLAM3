@@ -97,6 +97,16 @@ target_link_libraries(RGBD
 ${LIBS}
 )
 
+# Node for RGB-D camera from bag
+rosbuild_add_executable(RGBD_BAG
+src/ros_rgbd_from_bag.cc
+)
+
+target_link_libraries(RGBD_BAG
+${LIBS}
+)
+
+
 # Node for monocular-inertial camera
 rosbuild_add_executable(Mono_Inertial
 src/ros_mono_inertial.cc
